@@ -1,6 +1,6 @@
 
 CS643 Programming Assignment-2
-This project showcases the distributed training of a machine learning model using Apache Spark on a cluster of four instances. The model evaluates wine quality and achieves an F1 score of 0.8730357142857142 on the validation dataset using an SVC model. The following steps detail the entire setup process, from configuring instances to running the Spark job via Docker.
+This project showcases the distributed training of a machine learning model using Apache Spark on a cluster of four instances. The model evaluates wine quality and achieves an F1 score of 0.8730357142857142 on the validation dataset using an Random Forest model. The following steps detail the entire setup process, from configuring instances to running the Spark job via Docker.
 
 Link to Docker Image: [https://hub.docker.com/r/abhiraj1625/wine-quality-eval](https://hub.docker.com/r/abhiraj1625/wine-eval)
 
