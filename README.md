@@ -101,22 +101,22 @@ Dockerfile:
 
 dockerfile
 
-# Use the official Spark image as a base image
+Use the official Spark image as a base image
 FROM bitnami/spark:3.4.1
 
-# Set the working directory inside the container
+Set the working directory inside the container
 WORKDIR /app
 
-# Copy WineQualityEval (containing the JAR) to the container
+Copy WineQualityEval (containing the JAR) to the container
 COPY WineQualityEval /app/WineQualityEval
 
-# Copy WineQualityPredictionModel to /home/ubuntu
+Copy WineQualityPredictionModel to /home/ubuntu
 COPY WineQualityPredictionModel /home/ubuntu/WineQualityPredictionModel
 
-# Copy ValidationDataset.csv to /home/ubuntu
+Copy ValidationDataset.csv to /home/ubuntu
 COPY ValidationDataset.csv /home/ubuntu/ValidationDataset.csv
 
-# Set the command to run your Spark job
+Set the command to run your Spark job
 CMD ["spark-submit", "--master", "local", "--class", "com.example.WineQualityEval", "/app/WineQualityEval/target/wine-quality-eval-1.0-SNAPSHOT.jar"]
 Build and push the image:
 
@@ -124,17 +124,16 @@ bash
 
 sudo docker build -t abhiraj1625/wine-quality-eval:latest .
 sudo docker push abhiraj1625/wine-quality-eval:latest
+
 9. Pull and Run the Docker Image
 On each instance, pull the Docker image:
-
 bash
-
 sudo docker pull abhiraj1625/wine-quality-eval:latest
+
 Run the container:
-
 bash
-
 sudo docker run abhiraj1625/wine-quality-eval:latest
+
 10. Results
 The final F1 score achieved on the validation dataset is:
 
