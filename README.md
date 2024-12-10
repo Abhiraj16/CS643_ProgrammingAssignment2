@@ -1,177 +1,106 @@
-# CS643_ProgrammingAssignment2
 
-CS643 - AWS Spark Wine Quality Prediction Application
+CS643 Programming Assignment-2
+This project showcases the distributed training of a machine learning model using Apache Spark on a cluster of four instances. The model evaluates wine quality and achieves an F1 score of 0.8730357142857142 on the validation dataset using an SVC model. The following steps detail the entire setup process, from configuring instances to running the Spark job via Docker.
 
-The aim of this project is to train a machine learning model parallely on ec2 instances for predicting wine quality on a publicly available data and then use the trained model to predict the wine quality. Project also uses Docker to create a container image for trained machine learning model to simplify deployments.
- 
-
-Link to github code -
-https://github.com/Abhiraj16/CS643_ProgrammingAssignment2
-
-Source files:
- 
- `WineQualityPrediction ` reads Training dataset from the file and creates a model.
-
- `WineQualityEval` program loads trained model and executes that model on given Validation dataset. It generates F1 score.
-
- `Dockerfile` creates docker image and run container for simplified deployment.
+Link to Docker Image: [https://hub.docker.com/r/abhiraj1625/wine-quality-eval](https://hub.docker.com/r/abhiraj1625/wine-eval)
 
 
-##  Instruction to use:
----
+Steps to Set Up and Execute the Project
+1. SSH into the Instances
+Log into each of your four instances using SSH. Replace <instance-ip> with the IP address of the specific instance:
 
-### 1. SSH into 4 Instances
-To SSH into your 4 instances, use the following command for each instance:
+bash
 
-```bash
 ssh -i /path/to/your/private-key.pem ubuntu@<instance-ip>
-```
-Repeat this step for all 4 instances.
+2. Generate SSH Keys
+Generate SSH key pairs on each instance to enable passwordless communication between them:
 
----
+bash
 
-### 2. Generate SSH Keys on All 4 Instances
-On each of the instances, execute the following commands:
-
-```bash
 ssh-keygen -t rsa -N "" -f /home/ubuntu/.ssh/id_rsa
-cd ~/.ssh
-ls -lrt  # To see the generated keys
-cat ~/.ssh/id_rsa.pub  # To display the public key
-```
+cat ~/.ssh/id_rsa.pub
+Copy the public key from each instance and add it to the authorized_keys file of all other instances.
 
-Make sure to note down the output of the `cat ~/.ssh/id_rsa.pub` command, as you will need to copy this public key to the other instances.
+3. Update the /etc/hosts File
+Edit the /etc/hosts file on each instance to map the hostnames of all instances:
 
----
+bash
 
-### 3. Add Public Keys to `authorized_keys` on All 4 Instances
-On each instance, execute the following:
-
-1. Open the `authorized_keys` file in `vim`:
-
-```bash
-vim ~/.ssh/authorized_keys
-```
-
-2. Copy and paste the public keys from all 4 instances into this file. Each key should be on a new line.
-
----
-
-### 4. Edit `/etc/hosts` on All 4 Instances
-On each instance, add the following entries to `/etc/hosts` to define hostnames for each instance:
-
-1. First, navigate to the home directory:
-
-```bash
-cd
-```
-
-2. Open the `/etc/hosts` file in `vim`:
-
-```bash
 sudo vim /etc/hosts
-```
+Add entries similar to the following (replace <ip-address> with actual instance IPs):
 
-3. Add the following lines:
+css
 
-```
 <ip-address> nn
 <ip-address> dd1
 <ip-address> dd2
 <ip-address> dd3
-```
-
-Replace `<ip-address>` with the actual IP addresses of your instances.
-
----
-
-### 5. Install Java, Maven, and Spark 3.4.1 on All 4 Instances
-On each instance, install Java, Maven, and Spark as follows:
+4. Install the Required Software
+Install Java, Maven, and Spark on all instances.
 
 Install Java:
-```bash
+
+bash
+
 sudo apt update
-sudo apt install openjdk-11-jdk -y
-java -version  # To verify installation
-```
-
+sudo apt install openjdk-8-jdk -y
 Install Maven:
-```bash
+
+bash
+
 sudo apt install maven -y
-mvn -version  # To verify installation
-```
+Install Spark: Download and extract Spark:
 
-Install Spark 3.4.1:
+bash
 
-1. Download Spark from the official link (e.g., Spark 3.4.1):
-```bash
-wget https://archive.apache.org/dist/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3.2.tgz
-```
+wget https://archive.apache.org/dist/spark/spark-3.4.1/spark-3.4.1-bin-hadoop3.tgz
+tar -xvzf spark-3.4.1-bin-hadoop3.tgz
+Set environment variables:
 
-2. Extract Spark:
-tar -xvzf spark-3.4.1-bin-hadoop3.2.tgz
+bash
 
-3. Set Spark environment variables:
-echo "export SPARK_HOME=/home/ubuntu/spark-3.4.1-bin-hadoop3.2" >> ~/.bashrc
+echo "export SPARK_HOME=/home/ubuntu/spark-3.4.1-bin-hadoop3" >> ~/.bashrc
 echo "export PATH=\$SPARK_HOME/bin:\$PATH" >> ~/.bashrc
 source ~/.bashrc
-```
+5. Configure Spark Workers
+Copy and update the workers file to include all cluster nodes:
 
----
+bash
 
-**### 6. Copy `workers.template` to `workers`**
-Now, copy the `workers.template` file to `workers`:
 cp $SPARK_HOME/conf/workers.template $SPARK_HOME/conf/workers
-```
-
----
-
-### 7. Edit `workers` File
-Open the `workers` file in `vim` and add the following lines after `localhost`:
-
 vim $SPARK_HOME/conf/workers
-```
+Add the following lines (replace with actual hostnames or IP addresses):
 
-Add the following (replace `dd1/ip-address`, `dd2/ip-address`, `dd3/ip-address` with the actual IP addresses of your instances):
+bash
 
-```
 localhost
 dd1/ip-address
 dd2/ip-address
 dd3/ip-address
-```
+6. Set Up Directories for Training and Evaluation
+On each instance, create directories for training and evaluation:
 
----
+bash
 
-### 8. Install Spark 3.4.1, Java, and Maven
-Ensure that Spark, Java, and Maven are installed on all the instances as explained above.
-
----
-
-### 9. Create Folders for Training and Eval and Place Java Codes
-On each instance, create two folders named `Training` and `Eval`:
 mkdir ~/Training
 mkdir ~/Eval
-```
+Place the respective Java code files for training and evaluation in these directories.
 
-Place the respective Java code files (for training and evaluation) inside these folders.
+7. Run the Training Code
+Execute the training code with Spark:
 
----
-
-### 10. Run the Training Code in Parallel Using `spark-submit`
-To run your training code using `spark-submit` on all instances in parallel, use the following command:
+bash
 
 spark-submit --master spark://<master-ip>:7077 --class com.example.WineQualityEval /home/ubuntu/Training/wine-quality-train-1.0-SNAPSHOT.jar
-```
+Replace <master-ip> with the IP address of the Spark master node.
 
-Replace `<master-ip>` with the actual IP address of the Spark master instance.
+8. Build a Docker Image
+Create a Docker image to package the application:
 
----
+Dockerfile:
 
-### 11. Create a Docker Image
-Once your code is ready and everything is configured, create a Docker image. Here’s the `Dockerfile` we previously worked on:
+dockerfile
 
-```dockerfile
 # Use the official Spark image as a base image
 FROM bitnami/spark:3.4.1
 
@@ -181,57 +110,32 @@ WORKDIR /app
 # Copy WineQualityEval (containing the JAR) to the container
 COPY WineQualityEval /app/WineQualityEval
 
-# Copy WineQualityPredictionModel to /home/ubuntu (matching the JAR's expected path)
+# Copy WineQualityPredictionModel to /home/ubuntu
 COPY WineQualityPredictionModel /home/ubuntu/WineQualityPredictionModel
 
-# Copy ValidationDataset.csv to /home/ubuntu (matching the JAR's expected path)
+# Copy ValidationDataset.csv to /home/ubuntu
 COPY ValidationDataset.csv /home/ubuntu/ValidationDataset.csv
 
-# Set the command to run your Spark job using spark-submit
+# Set the command to run your Spark job
 CMD ["spark-submit", "--master", "local", "--class", "com.example.WineQualityEval", "/app/WineQualityEval/target/wine-quality-eval-1.0-SNAPSHOT.jar"]
-```
+Build and push the image:
 
-To build the Docker image, run:
+bash
 
-```bash
-sudo docker build -t Abhiraj1625/wine-quality-eval:latest .
-```
+sudo docker build -t abhiraj1625/wine-quality-eval:latest .
+sudo docker push abhiraj1625/wine-quality-eval:latest
+9. Pull and Run the Docker Image
+On each instance, pull the Docker image:
 
----
+bash
 
-### 12. Push the Docker Image
-Once the image is built, you can push it to Docker Hub:
+sudo docker pull abhiraj1625/wine-quality-eval:latest
+Run the container:
 
-```bash
-sudo docker push Abhiraj1625/wine-quality-eval:latest
-```
+bash
 
-Make sure you're logged in to Docker Hub using:
+sudo docker run abhiraj1625/wine-quality-eval:latest
+10. Results
+The final F1 score achieved on the validation dataset is:
 
-```bash
-sudo docker login
-```
-
----
-
-### 13. Pull the Docker Image on Desired Instances
-To pull the image on the desired instances, run the following command on each instance:
-
-sudo docker pull Abhiraj1625/wine-quality-eval:latest
-
-### 14. Run the Docker Container
-Once the image is pulled, you can run it with:
-
-sudo docker run -it --entrypoint /bin/bash Abhiraj1625/wine-quality-eval:latest
-
-This will start the container and open a bash shell inside the container. You can then execute any further commands required.
-
----
-
- 15. Run the Spark Job in Docker
-To run the Spark job within the Docker container, use the following command:
-
-
-spark-submit --master spark://<master-ip>:7077 --class com.example.WineQualityEval /app/WineQualityEval/target/wine-quality-eval-1.0-SNAPSHOT.jar
-
-
+F1 Score: 0.8730357142857142
